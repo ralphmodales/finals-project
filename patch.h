@@ -11,7 +11,14 @@ namespace patch
         stm << n;
         return stm.str();
     }
+
+    inline float to_float(const std::string& s)
+    {
+        std::istringstream stm(s);
+        float result;
+        stm >> result;
+        return result;
+    }
 }
 
 #endif
-
