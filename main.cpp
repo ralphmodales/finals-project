@@ -4,7 +4,7 @@
 #include <string.h>
 #include <iomanip>
 #include <unistd.h>
-#include <climits>
+#include <fstream>
 #include "patch.h"
 
 int a_n;
@@ -13,7 +13,57 @@ char account;
 float balance, initial_deposit;
 bool isValid, isEighteen;
 
-void clearScreen()
+void saveAccountToData()
+{
+    std::ofstream file("account_data.csv", std::ios::app);
+
+    if (file.is_open()) 
+    {
+        file << account_number << "," << first << "," << last << "," << middle << "," << address << "," << birthday << "," << pin << "," << gender << "," << account << "," << balance << "," << initial_deposit << ",";   
+        file.close();
+    } 
+    else 
+    {
+        std::cout << "Unable to open the file for saving." << std::endl;
+    }
+}
+
+void loadAccountData()
+{
+    std::ifstream file("account_data.csv");
+
+    if (file.is_open())
+    {
+        std::string line,temp_account,temp_balance,temp_initial;
+        const char* arr_acc;
+        getline(file, line);
+
+        std::istringstream ss(line);
+
+        getline(ss, account_number, ',');
+        getline(ss, first, ',');
+        getline(ss, last, ',');
+        getline(ss, middle, ',');
+        getline(ss, address, ',');
+        getline(ss, birthday, ',');
+        getline(ss, pin, ',');
+        getline(ss, gender, ',');
+        getline(ss, temp_account, ',');
+        getline(ss, temp_balance, ',');
+        getline(ss, temp_initial, ',');
+        arr_acc = temp_account.c_str();
+        account = arr_acc[0];
+        std::cout << account;
+        if(account == 's' || account == 'S')
+            account_str = "Savings";
+        else if(account == 'f' || account == 'F')
+            account_str = "Current";
+        balance = patch::to_float(temp_balance);
+        initial_deposit = patch::to_float(temp_initial);
+    }
+}
+
+void clearScreen() 
 {
     system("cls");
 }
@@ -28,7 +78,7 @@ void displayAccessDenied()
     sleep(2);
 }
 
-void displayTransactionSuccess(std::string transactionType, float amount)
+void displayTransactionSuccess(std::string transactionType, float amount) 
 {
     clearScreen();
     std::cout << "==================================" << std::endl;
@@ -41,16 +91,16 @@ void displayTransactionSuccess(std::string transactionType, float amount)
 }
 
 
-void displayWelcomeScreen()
+void displayWelcomeScreen() 
 {
     clearScreen();
     std::cout << "----------------------------------------" << std::endl;
-    std::cout << "|          Welcome to My ATM           |" << std::endl;
-    std::cout << "|          Banking System              |" << std::endl;
+    std::cout << "|              Welcome to               |" << std::endl;
+    std::cout << "|               Snickers                |" << std::endl;
     std::cout << "----------------------------------------" << std::endl;
 }
 
-void displayMainMenu()
+void displayMainMenu() 
 {
     std::cout << "Main Menu:" << std::endl;
     std::cout << "1. Open a New Account" << std::endl;
@@ -65,7 +115,7 @@ void displayMainMenu()
     std::cout << "Enter your choice: ";
 }
 
-void displayBalance()
+void displayBalance() 
 {
     clearScreen();
     std::cout << "----------------------------------------" << std::endl;
@@ -75,7 +125,7 @@ void displayBalance()
     system("pause");
 }
 
-void displayNewAccountMenu()
+void displayNewAccountMenu() 
 {
     clearScreen();
     std::cout << "----------------------------------------" << std::endl;
@@ -83,7 +133,7 @@ void displayNewAccountMenu()
     std::cout << "----------------------------------------" << std::endl;
 }
 
-void displayPINGenerated()
+void displayPINGenerated() 
 {
     clearScreen();
     std::cout << "----------------------------------------" << std::endl;
@@ -93,11 +143,11 @@ void displayPINGenerated()
     system("pause");
 }
 
-bool checkPin()
+bool checkPin() 
 {
     clearScreen();
     std::string guess;
-
+    
     std::cout << "----------------------------------------" << std::endl;
     std::cout << "|               Enter PIN               |" << std::endl;
     std::cout << "----------------------------------------" << std::endl;
@@ -130,7 +180,7 @@ void changePin()
             if(std::cin.fail() || new_pin >= 1000 || new_pin < 0)
             {
                 std::cin.clear();
-                std::cin.ignore(INT_MAX, '\n');
+                std::cin.ignore(INT_MAX, '\n'); 
                 std::cout << "Invalid Input. Enter a valid PIN. " << std::endl;
             }
             else
@@ -200,7 +250,7 @@ void deleteAccount()
                 std::cout << "========================================\n" << std::endl;
                 system("pause");
             }
-        }
+        } 
     }
     else
     {
@@ -235,12 +285,18 @@ void withdraw()
                 dec = false;
                 displayTransactionSuccess("Withdraw", withdraw_money);
             }
+            else if (withdraw_money == -1)
+            {
+                std::cout << "Transaction canceled." << std::endl;
+                dec = false;
+                system("pause");
+            }
             else
             {
                 std::cout << "Invalid input. ";
                 if(withdraw_money > balance)
                     std::cout << "Insufficient Balance. ";
-                std::cout << "Enter x to cancel the transaction. " << std::endl;
+                std::cout << "Enter -1 to cancel the transaction. " << std::endl;
             }
         }
     }
@@ -248,7 +304,7 @@ void withdraw()
     {
         displayAccessDenied();
         system("pause");
-    }
+    }  
 }
 
 void deposit()
@@ -278,6 +334,12 @@ void deposit()
                 dec = false;
                 displayTransactionSuccess("Deposit", deposit_money);
             }
+            else if (deposit_money == -1)
+            {
+                std::cout << "Transaction canceled." << std::endl;
+                dec = false;
+                system("pause");
+            }
             else
             {
                 std::cout << "\nInvalid Input. Minimum deposit amount for ";
@@ -285,28 +347,28 @@ void deposit()
                     std::cout << "savings account is P300. ";
                 else if(account == 'c' || account == 'C')
                     std::cout << "current account is P500. ";
-
-                std::cout << "Enter x to cancel the transaction. " << std::endl;
+                
+                std::cout << "Enter -1 to cancel the transaction. " << std::endl;
 
             }
-
+                
         }
     }
     else
     {
         displayAccessDenied();
         system("pause");
-    }
+    }   
 }
 
-void balance_check()
+void balance_check() 
 {
     clearScreen();
-    if (checkPin())
+    if (checkPin()) 
     {
         displayBalance();
     }
-    else
+    else 
     {
         displayAccessDenied();
         system("pause");
@@ -316,7 +378,7 @@ void balance_check()
 void viewAccountInformation()
 {
     clearScreen();
-    if (checkPin())
+    if (checkPin()) 
     {
         clearScreen();
         std::cout << "----------------------------------------" << std::endl;
@@ -333,14 +395,14 @@ void viewAccountInformation()
         std::cout << "----------------------------------------" << std::endl;
         system("pause");
     }
-    else
+    else 
     {
         displayAccessDenied();
         system("pause");
     }
 }
 
-void pin_generator()
+void pin_generator() 
 {
     a_n = rand() % 10000;
     pin = patch::to_string(a_n);
@@ -350,12 +412,12 @@ void pin_generator()
     displayPINGenerated();
 }
 
-void account_type()
+void account_type() 
 {
     bool dec = true;
     char choice;
     double deposit_money;
-    while (dec)
+    while (dec) 
     {
         std::cout << "Choose an account type:" << std::endl;
         std::cout << "S - Savings Account (Minimum deposit: P5000)" << std::endl;
@@ -363,7 +425,7 @@ void account_type()
         std::cout << "Enter your choice: ";
         std::cin >> choice;
 
-        if (choice == 'S' || choice == 's')
+        if (choice == 'S' || choice == 's') 
         {
             do
             {
@@ -371,15 +433,16 @@ void account_type()
                 std::cin >> deposit_money;
 
                 if(deposit_money < 5000)
-                    std::cout << "Initial deposit is not sufficient. Please try again." << std::endl;
+                    std::cout << "Initial deposit is not sufficient. Please try again." << std::endl;                
             } while(deposit_money < 5000);
 
             balance = deposit_money;
             initial_deposit = deposit_money;
             account = choice;
+            account_str = "Savings";
             dec = false;
-        }
-        else if (choice == 'C' || choice == 'c')
+        } 
+        else if (choice == 'C' || choice == 'c') 
         {
             do
             {
@@ -387,15 +450,16 @@ void account_type()
                 std::cin >> deposit_money;
 
                 if(deposit_money < 10000)
-                    std::cout << "Initial deposit is not sufficient. Please try again." << std::endl;
+                    std::cout << "Initial deposit is not sufficient. Please try again." << std::endl;                
             } while(deposit_money < 10000);
 
             balance = deposit_money;
             initial_deposit = deposit_money;
             account = choice;
+            account_str = "Current";
             dec = false;
-        }
-        else
+        } 
+        else 
         {
             std::cout << "Invalid input. Please choose 'S' for Savings or 'C' for Current Account." << std::endl;
         }
@@ -404,25 +468,25 @@ void account_type()
     system("pause");
 }
 
-void gender_checker()
+void gender_checker() 
 {
     bool isAllowed = true;
     char input;
-    while (isAllowed)
+    while (isAllowed) 
     {
         std::cout << "Gender (M/F): ";
         std::cin >> input;
-        if (input == 'M' || input == 'm')
+        if (input == 'M' || input == 'm') 
         {
             gender = "Male";
             isAllowed = false;
-        }
-        else if (input == 'F' || input == 'f')
+        } 
+        else if (input == 'F' || input == 'f') 
         {
             gender = "Female";
             isAllowed = false;
-        }
-        else
+        } 
+        else 
         {
             std::cin.clear();
             std::cin.ignore(INT_MAX, '\n');
@@ -431,28 +495,28 @@ void gender_checker()
     }
 }
 
-void birthdate()
+void birthdate() 
 {
     bool dec = true;
-    while (dec)
+    while (dec) 
     {
         std::cout << "Birthdate (MM/DD/YYYY): ";
         std::cin >> birthday;
-        if (birthday.size() == 10)
+        if (birthday.size() == 10) 
         {
             std::istringstream bd(birthday);
             int month, day, year;
             char slash;
 
-            if (bd >> month >> slash >> day >> slash >> year && slash == '/')
+            if (bd >> month >> slash >> day >> slash >> year && slash == '/') 
             {
-                if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 1900 && (2024 - year) >= 18)
+                if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 1900 && (2024 - year) >= 18) 
                 {
                     isValid = true;
                     isEighteen = true;
                     dec = false;
-                }
-                else if (2024 - year < 18)
+                } 
+                else if (2024 - year < 18) 
                 {
                     clearScreen();
                     std::cout << "\n========================================" << std::endl;
@@ -463,24 +527,24 @@ void birthdate()
                     system("pause");
                     return;
                 }
-            }
-            else
+            } 
+            else 
             {
                 std::cout << "Invalid Input. Enter a valid birthdate." << std::endl;
             }
-        }
-        else
+        } 
+        else 
         {
             std::cout << "Invalid Input. Enter a valid birthdate." << std::endl;
         }
     }
 }
 
-void personal_info()
+void personal_info() 
 {
     clearScreen();
     std::cin.ignore();
-
+    
     std::cout << "----------------------------------------" << std::endl;
     std::cout << "|          Personal Information         |" << std::endl;
     std::cout << "----------------------------------------" << std::endl;
@@ -502,7 +566,7 @@ void personal_info()
         gender_checker();
 }
 
-void accnum_generator()
+void accnum_generator() 
 {
     clearScreen();
     a_n = rand() % 10000;
@@ -510,36 +574,102 @@ void accnum_generator()
     account_number = account_number.size() < 4 ? std::string(4 - account_number.size(), '0') + account_number : account_number;
 }
 
-void new_account()
+void new_account() 
 {
     clearScreen();
     accnum_generator();
     personal_info();
-    if (isValid)
+    if (isValid) 
     {
         account_type();
         pin_generator();
-    }
-    else
+        saveAccountToData();
+    } 
+    else 
     {
         return;
     }
     clearScreen();
 }
 
-int main(void)
+bool accountExists(const std::string& accountNumber) 
+{
+    std::ifstream file("account_data.csv");
+
+    if (file.is_open()) 
+    {
+        std::string line;
+        getline(file, line);
+        
+        std::istringstream ss(line);
+        std::string actual_acc_num, actual_pin;
+        int index = 0;
+
+        while(getline(ss, actual_acc_num, ','))
+        {
+            if(index == 0)
+            {
+                if (actual_acc_num == accountNumber)
+                {
+                    for (int i = 0; i <= 5; ++i)
+                    { 
+                    getline(ss, actual_pin, ',');
+                    }
+                    pin = actual_pin;
+                    file.close();
+                    return true;
+                }
+            }
+            index = (index + 1) % 13;
+        }
+    file.close();
+	}
+	return false;
+}
+
+void check_account()
+{
+    char decision;
+    std::string temp_acc_num;
+    displayWelcomeScreen();;
+
+    std::cout << "Do you want to log in with your existing account? (Y/N): ";
+    std::cin >> decision;
+
+    if(toupper(decision) == 'Y')
+    {
+        std::cout << "Enter your account number: ";
+        std::cin >> temp_acc_num;
+
+        if(accountExists(temp_acc_num))
+        {
+            isValid = true;
+            sleep(2);
+        }
+        else
+        {
+            std::cout << "There is no account in our data.";
+            sleep(2);
+        }
+    }
+
+}
+
+int main(void) 
 {
     int choice;
     bool dec = true;
     srand(time(0));
+    loadAccountData();
+    check_account();
 
-    while (dec)
+    while (dec) 
     {
         displayWelcomeScreen();
         displayMainMenu();
         std::cin >> choice;
 
-        switch (choice)
+        switch (choice) 
         {
             case 1:
                 new_account();
@@ -550,7 +680,7 @@ int main(void)
                 else
                 {
                     std::cout << "Invalid input. Please open a new account first." << std::endl;
-                    system("pause");
+                    system("pause");  
                 }
                 break;
             case 3:
@@ -559,7 +689,7 @@ int main(void)
                 else
                 {
                     std::cout << "Invalid input. Please open a new account first." << std::endl;
-                    system("pause");
+                    system("pause");  
                 }
                 break;
             case 4:
@@ -568,7 +698,7 @@ int main(void)
                 else
                 {
                     std::cout << "Invalid input. Please open a new account first." << std::endl;
-                    system("pause");
+                    system("pause");  
                 }
                 break;
             case 5:
@@ -577,7 +707,7 @@ int main(void)
                 else
                 {
                     std::cout << "Invalid input. Please open a new account first." << std::endl;
-                    system("pause");
+                    system("pause");  
                 }
                 break;
             case 6:
@@ -586,7 +716,7 @@ int main(void)
                 else
                 {
                     std::cout << "Invalid input. Please open a new account first." << std::endl;
-                    system("pause");
+                    system("pause");  
                 }
                 break;
             case 7:
@@ -595,7 +725,7 @@ int main(void)
                 else
                 {
                     std::cout << "Invalid input. Please open a new account first." << std::endl;
-                    system("pause");
+                    system("pause");  
                 }
                 break;
             case 8:
@@ -616,4 +746,3 @@ int main(void)
 
     return 0;
 }
-
