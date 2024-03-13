@@ -20,7 +20,7 @@ void saveAccountToData(const std::string& accountNumber)
 {
     if (mkdir("accounts") != 0 && errno != EEXIST) 
     {
-        std::cerr << "Error: Unable to create the 'accounts' directory." << std::endl;
+        std::cerr << "Error 5" << std::endl;
         return;
     }
 
