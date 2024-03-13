@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <unistd.h>
 #include <fstream>
+#include <sys/stat.h>
 #include "patch.h"
 
 int a_n;
@@ -13,24 +14,35 @@ char account;
 float balance, initial_deposit;
 bool isValid, isEighteen;
 
-void saveAccountToData()
+
+
+void saveAccountToData(const std::string& accountNumber) 
 {
-    std::ofstream file("account_data.csv", std::ios::app);
+    if (mkdir("accounts") != 0 && errno != EEXIST) 
+    {
+        std::cerr << "Error: Unable to create the 'accounts' directory." << std::endl;
+        return;
+    }
+
+    std::ofstream file(("accounts/" + accountNumber + ".csv").c_str());
 
     if (file.is_open()) 
     {
-        file << account_number << "," << first << "," << last << "," << middle << "," << address << "," << birthday << "," << pin << "," << gender << "," << account << "," << balance << "," << initial_deposit << ",";   
+        file << std::fixed << std::setprecision(2);
+        file << accountNumber << "," << first << "," << last << "," << middle << "," << address << "," << birthday << "," << pin << "," << gender << "," << account << "," << balance << "," << initial_deposit << std::endl;
         file.close();
     } 
     else 
     {
-        std::cout << "Unable to open the file for saving." << std::endl;
+        std::cerr << "Error: Unable to open the file " << accountNumber << ".csv for writing." << std::endl;
     }
 }
 
-void loadAccountData()
+
+
+void loadAccountData(const std::string& accountNumber)
 {
-    std::ifstream file("account_data.csv");
+    std::ifstream file(("accounts/" + accountNumber + ".csv").c_str());
 
     if (file.is_open())
     {
@@ -188,6 +200,7 @@ void changePin()
         }
         pin = patch::to_string(new_pin);
         pin = pin.size() < 4 ? std::string(4 - pin.size(), '0') + pin : pin;
+        saveAccountToData(account_number);
         displayPINGenerated();
     }
     else
@@ -214,6 +227,11 @@ void deleteAccount()
             std::cin >> choice;
             if(choice == 'y' || choice == 'Y')
             {
+                std::string filename = "accounts/" + account_number + ".csv";
+                if (remove(filename.c_str()) != 0)
+                {
+                    std::cerr << "Error: Unable to delete the file " << filename << std::endl;
+                }
                 account_number.clear();
                 first.clear();
                 last.clear();
@@ -277,12 +295,14 @@ void withdraw()
             {
                 balance -= withdraw_money;
                 dec = false;
+                saveAccountToData(account_number);
                 displayTransactionSuccess("Withdraw", withdraw_money);
             }
             else if(withdraw_money >= 500 && withdraw_money <= balance && account == 'c' || account == 'C')
             {
                 balance -= withdraw_money;
                 dec = false;
+                saveAccountToData(account_number);
                 displayTransactionSuccess("Withdraw", withdraw_money);
             }
             else if (withdraw_money == -1)
@@ -326,12 +346,14 @@ void deposit()
             {
                 balance += deposit_money;
                 dec = false;
+                saveAccountToData(account_number);
                 displayTransactionSuccess("Deposit", deposit_money);
             }
             else if(deposit_money >= 500 && account == 'c' || account == 'C')
             {
                 balance += deposit_money;
                 dec = false;
+                saveAccountToData(account_number);
                 displayTransactionSuccess("Deposit", deposit_money);
             }
             else if (deposit_money == -1)
@@ -566,35 +588,9 @@ void personal_info()
         gender_checker();
 }
 
-void accnum_generator() 
-{
-    clearScreen();
-    a_n = rand() % 10000;
-    account_number = patch::to_string(a_n);
-    account_number = account_number.size() < 4 ? std::string(4 - account_number.size(), '0') + account_number : account_number;
-}
-
-void new_account() 
-{
-    clearScreen();
-    accnum_generator();
-    personal_info();
-    if (isValid) 
-    {
-        account_type();
-        pin_generator();
-        saveAccountToData();
-    } 
-    else 
-    {
-        return;
-    }
-    clearScreen();
-}
-
 bool accountExists(const std::string& accountNumber) 
 {
-    std::ifstream file("account_data.csv");
+    std::ifstream file(("accounts/" + accountNumber + ".csv").c_str());
 
     if (file.is_open()) 
     {
@@ -627,6 +623,44 @@ bool accountExists(const std::string& accountNumber)
 	return false;
 }
 
+void accnum_generator() 
+{
+    clearScreen();
+    std::string temp_acc_num;
+    bool exists = true;
+
+    while (exists) 
+    {
+        a_n = rand() % 10000;
+        temp_acc_num = patch::to_string(a_n);
+        temp_acc_num = temp_acc_num.size() < 4 ? std::string(4 - temp_acc_num.size(), '0') + temp_acc_num : temp_acc_num;
+
+        if (!accountExists(temp_acc_num)) 
+        {
+            account_number = temp_acc_num;
+            exists = false;
+        }
+    }
+}
+
+void new_account() 
+{
+    clearScreen();
+    accnum_generator();
+    personal_info();
+    if (isValid) 
+    {
+        account_type();
+        pin_generator();
+        saveAccountToData(account_number);
+    } 
+    else 
+    {
+        return;
+    }
+    clearScreen();
+}
+
 void check_account()
 {
     char decision;
@@ -636,6 +670,7 @@ void check_account()
     std::cout << "Do you want to log in with your existing account? (Y/N): ";
     std::cin >> decision;
 
+
     if(toupper(decision) == 'Y')
     {
         std::cout << "Enter your account number: ";
@@ -643,6 +678,7 @@ void check_account()
 
         if(accountExists(temp_acc_num))
         {
+            loadAccountData(temp_acc_num);
             isValid = true;
             sleep(2);
         }
@@ -651,6 +687,7 @@ void check_account()
             std::cout << "There is no account in our data.";
             sleep(2);
         }
+
     }
 
 }
@@ -660,7 +697,6 @@ int main(void)
     int choice;
     bool dec = true;
     srand(time(0));
-    loadAccountData();
     check_account();
 
     while (dec) 
